@@ -1,0 +1,25 @@
+2025-06-23 01:26:10,732 - matplotlib - DEBUG - matplotlib data path: D:\Home\Desktop\Flask_backend\venv\Lib\site-packages\matplotlib\mpl-data
+2025-06-23 01:26:10,738 - matplotlib - DEBUG - CONFIGDIR=C:\Users\Arpit Raj\.matplotlib
+2025-06-23 01:26:10,740 - matplotlib - DEBUG - interactive is False
+2025-06-23 01:26:10,740 - matplotlib - DEBUG - platform is win32
+2025-06-23 01:26:10,819 - matplotlib - DEBUG - CACHEDIR=C:\Users\Arpit Raj\.matplotlib
+2025-06-23 01:26:10,822 - matplotlib.font_manager - DEBUG - Using fontManager instance from C:\Users\Arpit Raj\.matplotlib\fontlist-v390.json
+2025-06-23 01:26:14,364 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-23 01:26:14,366 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-23 01:26:14,368 - werkzeug - INFO -  * Restarting with stat
+2025-06-23 01:26:16,765 - matplotlib - DEBUG - matplotlib data path: D:\Home\Desktop\Flask_backend\venv\Lib\site-packages\matplotlib\mpl-data
+2025-06-23 01:26:16,770 - matplotlib - DEBUG - CONFIGDIR=C:\Users\Arpit Raj\.matplotlib
+2025-06-23 01:26:16,771 - matplotlib - DEBUG - interactive is False
+2025-06-23 01:26:16,771 - matplotlib - DEBUG - platform is win32
+2025-06-23 01:26:16,840 - matplotlib - DEBUG - CACHEDIR=C:\Users\Arpit Raj\.matplotlib
+2025-06-23 01:26:16,843 - matplotlib.font_manager - DEBUG - Using fontManager instance from C:\Users\Arpit Raj\.matplotlib\fontlist-v390.json
+2025-06-23 01:26:20,076 - werkzeug - WARNING -  * Debugger is active!
+2025-06-23 01:26:20,088 - werkzeug - INFO -  * Debugger PIN: 135-126-799
+2025-06-23 01:26:36,463 - werkzeug - INFO - 127.0.0.1 - - [23/Jun/2025 01:26:36] "GET / HTTP/1.1" 200 -
+2025-06-23 01:26:49,415 - werkzeug - INFO - 127.0.0.1 - - [23/Jun/2025 01:26:49] "[33mGET /debug HTTP/1.1[0m" 404 -
+2025-06-23 01:28:11,418 - werkzeug - INFO - 127.0.0.1 - - [23/Jun/2025 01:28:11] "[33mGET /test HTTP/1.1[0m" 404 -
+2025-06-23 01:30:03,389 - werkzeug - INFO - 127.0.0.1 - - [23/Jun/2025 01:30:03] "[33mGET /api HTTP/1.1[0m" 404 -
+2025-06-23 01:30:06,975 - werkzeug - INFO - 127.0.0.1 - - [23/Jun/2025 01:30:06] "[33mGET /api/v1 HTTP/1.1[0m" 404 -
+2025-06-23 01:34:12,447 - werkzeug - INFO -  * Detected change in 'D:\\Home\\Desktop\\Flask_backend\\app.py', reloading
+2025-06-23 01:34:13,353 - werkzeug - INFO -  * Restarting with stat

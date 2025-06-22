@@ -1,0 +1,9 @@
+review_text,star_rating,verified_purchase,helpful_votes,total_votes
+"This product is absolutely amazing! Best purchase ever! 5 stars! Highly recommend! Perfect!",5,Y,0,0
+"Good product for the price. Delivery was on time and packaging was adequate. Would recommend.",4,Y,2,3
+"Terrible product! Waste of money! Don't buy! Poor quality! Awful experience!",1,N,0,1
+"Works as expected. Nothing special but does the job. Fair value for money.",3,Y,1,2
+"AMAZING PRODUCT!!! BEST EVER!!! BUY NOW!!! PERFECT!!! 5 STARS!!!",5,N,0,0
+"Decent quality. Had some minor issues but customer service resolved them quickly.",4,Y,3,4
+"Outstanding! Fantastic! Wonderful! Great value! Perfect condition! Love it!",5,N,0,0
+"Pretty satisfied with this purchase. Build quality is solid and it works well.",4,Y,1,1
