@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pandas as pd
 import numpy as np
 import pickle
@@ -10,14 +11,24 @@ from sklearn.ensemble import RandomForestClassifier
 import warnings
 from flasgger import Swagger
 
-
 warnings.filterwarnings("ignore")
 
 # Import the training functions from train.py
 from train import train_model
-from predict import predict as make_prediction
+from predict import predict as make_prediction, predict_batch, extract_single_review_features
 
 app = Flask(__name__)
+# Enable CORS for all routes - comprehensive origins list
+CORS(app, origins=[
+    "http://localhost:3000", 
+    "http://localhost:5173", 
+    "http://localhost:8080",
+    "http://127.0.0.1:3000", 
+    "http://127.0.0.1:5173", 
+    "http://127.0.0.1:8080",
+    "http://0.0.0.0:8080",
+    "http://[::]:8080"
+])
 swagger = Swagger(app)
 
 
@@ -97,11 +108,9 @@ def health():
 def train():
     """Train the model endpoint"""
     try:
-        global model, vectorizer
-
-        # Get the data file path from request
+        global model, vectorizer        # Get the data file path from request
         data = request.get_json()
-        file_path = data.get("file_path", "/content/Book1.csv")
+        file_path = data.get("file_path", "D:/AA/TrustWeaver-AI/Book1.csv")
 
         print(f"🚀 Starting model training with data from: {file_path}")
 
@@ -235,59 +244,8 @@ def batch_predict():
                 400,
             )
 
-        results = []
-
-        for i, review_data in enumerate(reviews):
-            try:
-                # Validate required fields
-                if "review_text" not in review_data or "star_rating" not in review_data:
-                    results.append(
-                        {
-                            "index": i,
-                            "error": "Missing required fields: review_text, star_rating",
-                        }
-                    )
-                    continue
-
-                # Set default values for optional fields
-                complete_review_data = {
-                    "review_text": review_data["review_text"],
-                    "star_rating": review_data["star_rating"],
-                    "verified_purchase": review_data.get("verified_purchase", "N"),
-                    "helpful_votes": review_data.get("helpful_votes", 0),
-                    "total_votes": review_data.get("total_votes", 0),
-                }
-
-                # Extract features and make prediction
-                numerical_features = extract_single_review_features(
-                    complete_review_data
-                )
-                text_features = vectorizer.transform(
-                    [complete_review_data["review_text"]]
-                )
-
-                from scipy.sparse import hstack
-
-                combined_features = hstack([text_features, numerical_features.values])
-
-                prediction = model.predict(combined_features)[0]
-                prediction_proba = model.predict_proba(combined_features)[0]
-
-                results.append(
-                    {
-                        "index": i,
-                        "prediction": int(prediction),
-                        "prediction_label": "Genuine" if prediction == 1 else "Fake",
-                        "confidence": {
-                            "fake": float(prediction_proba[0]),
-                            "genuine": float(prediction_proba[1]),
-                        },
-                        "risk_score": float(1 - prediction_proba[1]),
-                    }
-                )
-
-            except Exception as e:
-                results.append({"index": i, "error": f"Processing failed: {str(e)}"})
+        # Use the batch prediction function from predict.py
+        results = predict_batch(reviews)
 
         return jsonify(
             {
@@ -307,68 +265,6 @@ def batch_predict():
             ),
             500,
         )
-
-
-# Helper function to extract features from a single review
-def extract_single_review_features(review_data):
-    """
-    Extracts numerical features from a single review dictionary.
-    Returns a pandas DataFrame with one row.
-    """
-    review_text = review_data.get("review_text", "")
-    star_rating = float(review_data.get("star_rating", 0))
-    verified_purchase = review_data.get("verified_purchase", "N")
-    helpful_votes = int(review_data.get("helpful_votes", 0))
-    total_votes = int(review_data.get("total_votes", 0))
-
-    review_length = len(review_text)
-    word_count = len(review_text.split())
-    exclamation_count = review_text.count("!")
-    question_count = review_text.count("?")
-    caps_ratio = (
-        sum(1 for c in review_text if c.isupper()) / len(review_text)
-        if len(review_text) > 0
-        else 0
-    )
-
-    # Example positive/negative word lists (customize as needed)
-    positive_words_list = ["good", "great", "excellent", "amazing", "love", "wonderful"]
-    negative_words_list = ["bad", "terrible", "awful", "hate", "poor", "worst"]
-
-    positive_words = sum(word in review_text.lower() for word in positive_words_list)
-    negative_words = sum(word in review_text.lower() for word in negative_words_list)
-
-    # Rating-text mismatch: 1 if rating is high but text is negative, or vice versa
-    rating_text_mismatch = int(
-        (star_rating >= 4 and negative_words > positive_words)
-        or (star_rating <= 2 and positive_words > negative_words)
-    )
-
-    is_verified = 1 if str(verified_purchase).upper() == "Y" else 0
-
-    helpfulness_ratio = helpful_votes / total_votes if total_votes > 0 else 0
-    has_helpful_votes = 1 if helpful_votes > 0 else 0
-
-    # For single review, duplicate_review is always 0 (cannot check in isolation)
-    duplicate_review = 0
-
-    features = {
-        "star_rating": star_rating,
-        "review_length": review_length,
-        "word_count": word_count,
-        "exclamation_count": exclamation_count,
-        "question_count": question_count,
-        "caps_ratio": caps_ratio,
-        "positive_words": positive_words,
-        "negative_words": negative_words,
-        "rating_text_mismatch": rating_text_mismatch,
-        "is_verified": is_verified,
-        "helpfulness_ratio": helpfulness_ratio,
-        "has_helpful_votes": has_helpful_votes,
-        "duplicate_review": duplicate_review,
-    }
-
-    return pd.DataFrame([features])
 
 
 if __name__ == "__main__":

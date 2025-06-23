@@ -406,7 +406,7 @@ def extract_features_from_book1(df):
     return df
 
 
-def train_model(path="content/Book1.csv"):
+def train_model(path="D:/AA/TrustWeaver-AI/Book1.csv"):
     # Install required packages
     required_packages = [
         "textstat",  # For readability analysis
@@ -433,7 +433,7 @@ def train_model(path="content/Book1.csv"):
         file_path = path
         print(f"Loading data from: {file_path}")
 
-        df_raw = pd.read_csv("." + file_path)
+        df_raw = pd.read_csv(file_path)
         print(f"✅ Successfully loaded {len(df_raw)} records from Book1.csv")
 
         # Map Book1.csv columns to our required format
@@ -572,9 +572,7 @@ def train_model(path="content/Book1.csv"):
     # df = pd.read_csv('path/to/your/dataset.csv')
     # print(f"Loaded dataset with {len(df)} reviews")
 
-    # Option 2: Use synthetic data for testing (current approach)
-
-    # 🔧 CONFIGURATION: Using Book1.csv for real review data
+    # Option 2: Use synthetic data for testing (current approach)    # 🔧 CONFIGURATION: Using Book1.csv for real review data
     EXTERNAL_DATA_PATH = path
     DATA_FORMAT = "csv"
 
@@ -584,13 +582,11 @@ def train_model(path="content/Book1.csv"):
 
     try:
         print(f"📂 Loading data from: {EXTERNAL_DATA_PATH}")
-        df_raw = pd.read_csv("." + EXTERNAL_DATA_PATH)
-        print(f"✅ Successfully loaded {len(df_raw)} records from Book1.csv")
-
-        # Map Book1.csv columns to our required format
+        df_raw = pd.read_csv(EXTERNAL_DATA_PATH)
+        print(f"✅ Successfully loaded {len(df_raw)} records from Book1.csv")        # Map Book1.csv columns to our required format
         df = pd.DataFrame(
             {
-                "review_text": df_raw["review_text"].fillna("")
+                "review_text": df_raw["review_body"].fillna("")
                 + " "
                 + df_raw["review_headline"].fillna(""),
                 "star_rating": df_raw["star_rating"],

@@ -5,15 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AlertTriangle, CheckCircle, XCircle, Brain, Star } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const ReviewAuthenticator = () => {
   const [reviewText, setReviewText] = useState("");
+  const [starRating, setStarRating] = useState(5);
+  const [verifiedPurchase, setVerifiedPurchase] = useState("Y");
+  const [helpfulVotes, setHelpfulVotes] = useState(0);
+  const [totalVotes, setTotalVotes] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-
-  const analyzeReview = async () => {
+  const [analysisResult, setAnalysisResult] = useState(null);  const analyzeReview = async () => {
     if (!reviewText.trim()) {
       toast({
         title: "Error",
@@ -25,40 +29,87 @@ const ReviewAuthenticator = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate AI analysis
-    setTimeout(() => {
-      const suspiciousPatterns = [
-        "fake", "bot", "paid", "incentive", "discount", "free product"
-      ];
-      
-      const isSuspicious = suspiciousPatterns.some(pattern => 
-        reviewText.toLowerCase().includes(pattern)
-      );
-      
-      const sentiment = reviewText.length > 100 ? 
-        (Math.random() > 0.5 ? "positive" : "negative") : "neutral";
-      
-      const fraudScore = isSuspicious ? 
-        Math.floor(Math.random() * 40) + 60 : 
-        Math.floor(Math.random() * 30) + 10;
+    try {
+      // Prepare data for the API
+      const requestData = {
+        review_text: reviewText,
+        star_rating: starRating,
+        verified_purchase: verifiedPurchase,
+        helpful_votes: helpfulVotes,
+        total_votes: totalVotes
+      };
 
-      setAnalysisResult({
-        isAuthentic: !isSuspicious,
-        fraudScore,
-        sentiment,
-        confidence: Math.floor(Math.random() * 20) + 80,
-        patterns: isSuspicious ? ["Incentivized review patterns", "Unnatural language"] : ["Natural language flow", "Balanced sentiment"],
-        recommendation: isSuspicious ? "Block review" : "Approve review"
+      console.log("Sending request to API:", requestData);
+
+      // Send request to Flask API with additional options for CORS
+      const response = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: 'cors', // Explicitly set CORS mode
+        credentials: 'omit', // Don't send credentials
+        body: JSON.stringify(requestData),
       });
-      
-      setIsAnalyzing(false);
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Response error:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      // Transform API response to match UI expectations
+      const transformedResult = {
+        isAuthentic: result.prediction === 1, // 1 = genuine, 0 = fake
+        fraudScore: Math.round(result.risk_score * 100), // Convert to percentage
+        sentiment: result.confidence.genuine > result.confidence.fake ? "positive" : "negative",
+        confidence: Math.round(Math.max(result.confidence.genuine, result.confidence.fake) * 100),
+        patterns: result.prediction === 0 ? 
+          ["Suspicious patterns detected", "AI model flagged as fake"] : 
+          ["Natural language patterns", "AI model verified as genuine"],
+        recommendation: result.prediction === 0 ? "Block review" : "Approve review",
+        apiResult: result // Store full API response for debugging
+      };
+
+      setAnalysisResult(transformedResult);
       
       toast({
         title: "Analysis Complete",
-        description: `Review analyzed with ${!isSuspicious ? 'authentic' : 'suspicious'} result`,
-        variant: !isSuspicious ? "default" : "destructive"
+        description: `Review analyzed as ${result.prediction_label.toLowerCase()}`,
+        variant: result.prediction === 1 ? "default" : "destructive"
       });
-    }, 2000);
+
+    } catch (error) {
+      console.error("Error analyzing review:", error);
+      
+      // More specific error messages
+      let errorMessage = error.message;
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = "Cannot connect to API. Please ensure:\n1. Flask API is running on http://127.0.0.1:5000\n2. CORS is properly configured\n3. No firewall blocking the connection";
+      }
+      
+      toast({
+        title: "Analysis Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const fillSampleData = () => {
+    setReviewText("Using these for years - love them. As a family allergic to wheat, dairy, eggs, nuts, and several other things, we love the entire Cravings Place line of products as it allows us to bake treats with minimal effort and ingredients. Most allergy-free and gluten-free mixes usually just omit one or two allergens at most, so it's great to see a mix created without many of the most common allergens. (Note these still have soy and corn). We consume these on a regular basis and have been doing so for years.");
+    setStarRating(5);
+    setVerifiedPurchase("Y");
+    setHelpfulVotes(0);
+    setTotalVotes(0);
   };
 
   const mockReviews = [
@@ -94,31 +145,93 @@ const ReviewAuthenticator = () => {
             <CardTitle className="flex items-center space-x-2">
               <Brain className="h-5 w-5 text-orange-500" />
               <span>Review Authentication</span>
-            </CardTitle>
-            <CardDescription>
-              Analyze reviews using Bedrock LLMs for fraudulent patterns
+            </CardTitle>            <CardDescription>
+              Analyze reviews using TrustWeaver AI for fraudulent patterns
             </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
-              placeholder="Paste a review to analyze for authenticity..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              className="min-h-[120px]"
-            />
-            <Button 
-              onClick={analyzeReview} 
-              disabled={isAnalyzing}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-            >
-              {isAnalyzing ? "Analyzing..." : "Analyze Review"}
-            </Button>
-            
-            {isAnalyzing && (
+          </CardHeader>          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="review-text">Review Text</Label>
+                <Textarea
+                  id="review-text"
+                  placeholder="Paste a review to analyze for authenticity..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  className="min-h-[120px]"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="star-rating">Star Rating</Label>
+                  <Input
+                    id="star-rating"
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={starRating}
+                    onChange={(e) => setStarRating(parseInt(e.target.value) || 1)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="verified-purchase">Verified Purchase</Label>
+                  <select
+                    id="verified-purchase"
+                    value={verifiedPurchase}
+                    onChange={(e) => setVerifiedPurchase(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="Y">Yes</option>
+                    <option value="N">No</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="helpful-votes">Helpful Votes</Label>
+                  <Input
+                    id="helpful-votes"
+                    type="number"
+                    min="0"
+                    value={helpfulVotes}
+                    onChange={(e) => setHelpfulVotes(parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="total-votes">Total Votes</Label>
+                  <Input
+                    id="total-votes"
+                    type="number"
+                    min="0"
+                    value={totalVotes}
+                    onChange={(e) => setTotalVotes(parseInt(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={analyzeReview} 
+                  disabled={isAnalyzing}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                >
+                  {isAnalyzing ? "Analyzing..." : "Analyze Review"}
+                </Button>
+                <Button 
+                  onClick={fillSampleData}
+                  variant="outline"
+                  className="border-orange-500 text-orange-500 hover:bg-orange-50"
+                >
+                  Fill Sample
+                </Button>
+              </div>
+            </div>
+              {isAnalyzing && (
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Brain className="h-4 w-4 animate-pulse" />
-                  <span>Processing with Bedrock LLM...</span>
+                  <span>Processing with TrustWeaver AI...</span>
                 </div>
                 <Progress value={Math.random() * 100} className="h-2" />
               </div>
@@ -167,6 +280,19 @@ const ReviewAuthenticator = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Show extracted features from API */}
+                {analysisResult.apiResult?.features_extracted && (
+                  <div className="mt-4 p-3 bg-white rounded border">
+                    <p className="text-sm text-gray-600 mb-2 font-medium">AI Model Features</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>Review Length: {analysisResult.apiResult.features_extracted.review_length}</div>
+                      <div>Word Count: {analysisResult.apiResult.features_extracted.word_count}</div>
+                      <div>Star Rating: {analysisResult.apiResult.features_extracted.star_rating}</div>
+                      <div>Verified: {analysisResult.apiResult.features_extracted.is_verified ? 'Yes' : 'No'}</div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
